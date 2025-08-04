@@ -1,0 +1,117 @@
+<div class="p-6">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Platform
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price Change
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Change %
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Changed At
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% if changes %}
+                    {% for change in changes %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                {% if change.product_image %}
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <img class="h-10 w-10 rounded object-cover" src="{{ change.product_image }}" alt="Product">
+                                </div>
+                                {% endif %}
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ change.title[:60] + ('...' if change.title|length > 60 else '') }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        ID: {{ change.canonical_id[:8] }}...
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                {% if change.platform == 'amazon' %}
+                                    <i class="fab fa-amazon text-orange-500 mr-2"></i>
+                                {% elif change.platform == 'rakuten' %}
+                                    <i class="fas fa-shopping-cart text-red-500 mr-2"></i>
+                                {% elif change.platform == 'yahoo' %}
+                                    <i class="fab fa-yahoo text-purple-500 mr-2"></i>
+                                {% else %}
+                                    <i class="fas fa-store text-gray-500 mr-2"></i>
+                                {% endif %}
+                                {{ change.platform|title }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm">
+                                {% if change.old_price and change.new_price %}
+                                    <div class="{% if change.price_change_amount > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                                        {{ change.old_price|string }} → {{ change.new_price|string }}
+                                    </div>
+                                    <div class="text-xs {% if change.price_change_amount > 0 %}text-red-500{% else %}text-green-500{% endif %}">
+                                        {% if change.price_change_amount > 0 %}+{% endif %}{{ change.price_change_amount }}
+                                    </div>
+                                {% else %}
+                                    <span class="text-gray-400">No price data</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if change.price_change_percent %}
+                                <div class="text-sm font-medium">
+                                    <span class="{% if change.price_change_percent > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                                        {% if change.price_change_percent > 0 %}+{% endif %}{{ "%.1f"|format(change.price_change_percent) }}%
+                                    </span>
+                                </div>
+                            {% else %}
+                                <span class="text-gray-400">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div class="text-sm">
+                                {{ change.changed_at[:19].replace('T', ' ') if change.changed_at else 'N/A' }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            {% if change.product_url %}
+                                <a href="{{ change.product_url }}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-external-link-alt mr-1"></i>
+                                    View Product
+                                </a>
+                            {% else %}
+                                <span class="text-gray-400">No URL</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-search text-3xl text-gray-300 mb-3"></i>
+                                <p class="text-lg font-medium">No changes detected yet</p>
+                                <p class="text-sm">Run the change detector on your scraped results to see price and product changes over time.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>

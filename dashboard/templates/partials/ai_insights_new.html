@@ -1,0 +1,165 @@
+<!-- AI Insights Results -->
+<div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <!-- Question Header -->
+    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">
+        <div class="flex items-start">
+            <i class="fas fa-question-circle text-white text-lg mr-3 mt-1"></i>
+            <div>
+                <h3 class="text-white font-medium">{{ insights.question }}</h3>
+                <p class="text-blue-100 text-sm mt-1">{{ insights.summary }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Answer Content -->
+    <div class="p-6">
+        <div class="mb-4">
+            <p class="text-gray-700 font-medium">{{ insights.answer }}</p>
+        </div>
+
+        <!-- Display Results Based on Type -->
+        {% if insights.insight_type == 'biggest_movers' and insights.data %}
+        <div class="space-y-4">
+            {% for item in insights.data[:10] %}
+            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-sm font-medium text-gray-900 truncate">{{ item.title or 'Unknown Product' }}</h4>
+                        <div class="mt-2 flex items-center space-x-4 text-sm">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if item.platform == 'AMAZON_JP' %}bg-orange-100 text-orange-800
+                                {% elif item.platform == 'RAKUTEN' %}bg-red-100 text-red-800
+                                {% else %}bg-purple-100 text-purple-800{% endif %}">
+                                {{ item.platform or 'Unknown' }}
+                            </span>
+                            <span class="text-gray-500">{{ item.changed_at[:19] if item.changed_at else 'Recently' }}</span>
+                        </div>
+                    </div>
+                    <div class="ml-4 text-right">
+                        <div class="text-sm font-medium text-gray-900">
+                            ¥{{ "{:,.0f}".format(item.old_price) if item.old_price else 'N/A' }} → 
+                            ¥{{ "{:,.0f}".format(item.new_price) if item.new_price else 'N/A' }}
+                        </div>
+                        <div class="text-lg font-bold 
+                            {% if item.price_change_percent > 0 %}text-red-600
+                            {% else %}text-green-600{% endif %}">
+                            {% if item.price_change_percent > 0 %}📈 +{% else %}📉 {% endif %}{{ "%.1f"|format(item.price_change_percent) }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% elif insights.insight_type == 'platform_analysis' and insights.data %}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {% for platform, stats in insights.data.items() %}
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-900 mb-3">{{ platform }}</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Increases:</span>
+                        <span class="text-sm font-medium text-red-600">{{ stats.increases }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Decreases:</span>
+                        <span class="text-sm font-medium text-green-600">{{ stats.decreases }}</span>
+                    </div>
+                    <div class="flex justify-between border-t pt-2">
+                        <span class="text-sm text-gray-600">Avg Change:</span>
+                        <span class="text-sm font-medium">{{ "%.1f"|format(stats.total_change / (stats.increases + stats.decreases) if (stats.increases + stats.decreases) > 0 else 0) }}%</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% elif insights.insight_type == 'price_increases' and insights.data %}
+        <div class="space-y-3">
+            {% for item in insights.data[:10] %}
+            <div class="border border-red-200 bg-red-50 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <h4 class="text-sm font-medium text-gray-900">{{ item.title or 'Unknown Product' }}</h4>
+                        <p class="text-xs text-gray-600 mt-1">{{ item.platform or 'Unknown Platform' }}</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-bold text-red-600">+{{ "%.1f"|format(item.price_change_percent) }}%</div>
+                        <div class="text-sm text-gray-600">¥{{ "{:,.0f}".format(item.new_price) if item.new_price else 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% elif insights.insight_type == 'price_decreases' and insights.data %}
+        <div class="space-y-3">
+            {% for item in insights.data[:10] %}
+            <div class="border border-green-200 bg-green-50 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <h4 class="text-sm font-medium text-gray-900">{{ item.title or 'Unknown Product' }}</h4>
+                        <p class="text-xs text-gray-600 mt-1">{{ item.platform or 'Unknown Platform' }}</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-bold text-green-600">{{ "%.1f"|format(item.price_change_percent) }}%</div>
+                        <div class="text-sm text-gray-600">¥{{ "{:,.0f}".format(item.new_price) if item.new_price else 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% elif insights.insight_type == 'overview' and insights.data %}
+        <div class="bg-gray-50 rounded-lg p-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                    <div class="text-2xl font-bold text-blue-600">{{ insights.data.total_changes }}</div>
+                    <div class="text-sm text-gray-600">Total Changes</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-green-600">{{ insights.data.categories }}</div>
+                    <div class="text-sm text-gray-600">Categories</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-purple-600">{{ insights.data.platforms }}</div>
+                    <div class="text-sm text-gray-600">Platforms</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-orange-600">{{ insights.data.biggest_movers|length }}</div>
+                    <div class="text-sm text-gray-600">Top Movers</div>
+                </div>
+            </div>
+            
+            {% if insights.data.biggest_movers %}
+            <div class="mt-6">
+                <h4 class="font-medium text-gray-900 mb-3">Top 3 Movers:</h4>
+                <div class="space-y-2">
+                    {% for item in insights.data.biggest_movers[:3] %}
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="truncate flex-1 mr-4">{{ item.title or 'Unknown Product' }}</span>
+                        <span class="font-medium {% if item.price_change_percent > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                            {% if item.price_change_percent > 0 %}+{% endif %}{{ "%.1f"|format(item.price_change_percent) }}%
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% else %}
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-yellow-600 mr-3"></i>
+                <div>
+                    <p class="text-yellow-800 font-medium">No data available</p>
+                    <p class="text-yellow-700 text-sm mt-1">
+                        Try running some scrapes first, then check back for insights.
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>

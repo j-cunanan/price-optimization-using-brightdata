@@ -1,0 +1,174 @@
+<div class="p-6">
+    <div class="mb-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">
+            Change Details: {{ keyword.replace('_', ' ').title() }}
+        </h3>
+        <p class="text-gray-600">
+            Comparison between {{ change_data.newer_file_time[:19].replace('T', ' ') if change_data.get('newer_file_time') else 'newer' }} 
+            and {{ change_data.older_file_time[:19].replace('T', ' ') if change_data.get('older_file_time') else 'older' }}
+        </p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div class="text-2xl font-bold text-green-600">
+                {{ change_data.summary.added if change_data.get('summary', {}).get('added') else 0 }}
+            </div>
+            <div class="text-sm text-green-800">Products Added</div>
+        </div>
+        
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="text-2xl font-bold text-red-600">
+                {{ change_data.summary.removed if change_data.get('summary', {}).get('removed') else 0 }}
+            </div>
+            <div class="text-sm text-red-800">Products Removed</div>
+        </div>
+        
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="text-2xl font-bold text-blue-600">
+                {{ change_data.summary.price_changes if change_data.get('summary', {}).get('price_changes') else 0 }}
+            </div>
+            <div class="text-sm text-blue-800">Price Changes</div>
+        </div>
+        
+        <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <div class="text-2xl font-bold text-purple-600">
+                {% if change_data.get('summary', {}).get('avg_price_change') %}
+                {% if change_data.summary.avg_price_change > 0 %}+{% endif %}¥{{ "{:,.0f}".format(change_data.summary.avg_price_change) }}
+                {% else %}
+                ¥0
+                {% endif %}
+            </div>
+            <div class="text-sm text-purple-800">Avg Price Change</div>
+        </div>
+    </div>
+
+    <!-- Added Products -->
+    {% if change_data.get('details', {}).get('added') %}
+    <div class="mb-6">
+        <h4 class="text-lg font-semibold text-green-700 mb-3">
+            <i class="fas fa-plus mr-2"></i>
+            New Products ({{ change_data.details.added|length }})
+        </h4>
+        <div class="space-y-3 max-h-64 overflow-y-auto">
+            {% for product in change_data.details.added[:10] %}
+            <div class="bg-green-50 border-l-4 border-green-400 p-3 rounded">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h5 class="font-medium text-gray-900">{{ product.title or 'Untitled Product' }}</h5>
+                        <div class="text-sm text-gray-600 mt-1">
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium
+                                       {% if product.platform == 'amazon_jp' %}bg-orange-100 text-orange-800{% endif %}
+                                       {% if product.platform == 'rakuten' %}bg-red-100 text-red-800{% endif %}
+                                       {% if product.platform == 'mercari' %}bg-pink-100 text-pink-800{% endif %}
+                                       {% if product.platform == 'yahoo_shopping' %}bg-purple-100 text-purple-800{% endif %}">
+                                {{ product.platform.replace('_', ' ').title() if product.platform else 'Unknown' }}
+                            </span>
+                        </div>
+                    </div>
+                    {% if product.price %}
+                    <div class="text-right">
+                        <div class="font-bold text-gray-900">¥{{ "{:,.0f}".format(product.price) }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {% if change_data.details.added|length > 10 %}
+            <p class="text-sm text-gray-500 text-center">... and {{ change_data.details.added|length - 10 }} more</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Removed Products -->
+    {% if change_data.get('details', {}).get('removed') %}
+    <div class="mb-6">
+        <h4 class="text-lg font-semibold text-red-700 mb-3">
+            <i class="fas fa-minus mr-2"></i>
+            Removed Products ({{ change_data.details.removed|length }})
+        </h4>
+        <div class="space-y-3 max-h-64 overflow-y-auto">
+            {% for product in change_data.details.removed[:10] %}
+            <div class="bg-red-50 border-l-4 border-red-400 p-3 rounded">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h5 class="font-medium text-gray-900">{{ product.title or 'Untitled Product' }}</h5>
+                        <div class="text-sm text-gray-600 mt-1">
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium
+                                       {% if product.platform == 'amazon_jp' %}bg-orange-100 text-orange-800{% endif %}
+                                       {% if product.platform == 'rakuten' %}bg-red-100 text-red-800{% endif %}
+                                       {% if product.platform == 'mercari' %}bg-pink-100 text-pink-800{% endif %}
+                                       {% if product.platform == 'yahoo_shopping' %}bg-purple-100 text-purple-800{% endif %}">
+                                {{ product.platform.replace('_', ' ').title() if product.platform else 'Unknown' }}
+                            </span>
+                        </div>
+                    </div>
+                    {% if product.price %}
+                    <div class="text-right">
+                        <div class="font-bold text-gray-900">¥{{ "{:,.0f}".format(product.price) }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {% if change_data.details.removed|length > 10 %}
+            <p class="text-sm text-gray-500 text-center">... and {{ change_data.details.removed|length - 10 }} more</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Price Changes -->
+    {% if change_data.get('details', {}).get('price_changes') %}
+    <div class="mb-6">
+        <h4 class="text-lg font-semibold text-blue-700 mb-3">
+            <i class="fas fa-exchange-alt mr-2"></i>
+            Price Changes ({{ change_data.details.price_changes|length }})
+        </h4>
+        <div class="space-y-3 max-h-64 overflow-y-auto">
+            {% for change in change_data.details.price_changes[:10] %}
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h5 class="font-medium text-gray-900">{{ change.title or 'Untitled Product' }}</h5>
+                        <div class="text-sm text-gray-600 mt-1">
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium
+                                       {% if change.platform == 'amazon_jp' %}bg-orange-100 text-orange-800{% endif %}
+                                       {% if change.platform == 'rakuten' %}bg-red-100 text-red-800{% endif %}
+                                       {% if change.platform == 'mercari' %}bg-pink-100 text-pink-800{% endif %}
+                                       {% if change.platform == 'yahoo_shopping' %}bg-purple-100 text-purple-800{% endif %}">
+                                {{ change.platform.replace('_', ' ').title() if change.platform else 'Unknown' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        {% if change.old_price and change.new_price %}
+                        <div class="text-sm text-gray-500 line-through">¥{{ "{:,.0f}".format(change.old_price) }}</div>
+                        <div class="font-bold {% if change.new_price > change.old_price %}text-red-600{% else %}text-green-600{% endif %}">
+                            ¥{{ "{:,.0f}".format(change.new_price) }}
+                        </div>
+                        <div class="text-xs {% if change.new_price > change.old_price %}text-red-600{% else %}text-green-600{% endif %}">
+                            {% if change.new_price > change.old_price %}+{% endif %}¥{{ "{:,.0f}".format(change.new_price - change.old_price) }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% if change_data.details.price_changes|length > 10 %}
+            <p class="text-sm text-gray-500 text-center">... and {{ change_data.details.price_changes|length - 10 }} more</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not change_data.get('details') %}
+    <div class="text-center py-8 text-gray-500">
+        <i class="fas fa-info-circle text-3xl text-gray-300 mb-3"></i>
+        <p class="text-lg font-medium">No detailed changes available</p>
+        <p class="text-sm">This change detection result doesn't contain detailed product-level changes.</p>
+    </div>
+    {% endif %}
+</div>

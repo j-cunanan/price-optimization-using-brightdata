@@ -1,0 +1,139 @@
+<div class="p-6">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Keyword
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Scraped At
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Products
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price Range
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Platforms
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for result in results %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ result.keyword.replace('_', ' ').title() }}
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    {{ result.batch_id }}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ result.scraped_at[:19].replace('T', ' ') if result.scraped_at else 'N/A' }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">
+                            {{ result.total_products }} total
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            {{ result.products_with_price }} with price
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if result.min_price %}
+                        <div class="text-sm text-gray-900">
+                            ¥{{ "{:,.0f}".format(result.min_price) }} - ¥{{ "{:,.0f}".format(result.max_price) }}
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            Avg: ¥{{ "{:,.0f}".format(result.avg_price) }}
+                        </div>
+                        {% else %}
+                        <span class="text-sm text-gray-400">No prices</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex flex-wrap gap-1">
+                            {% for platform in result.platforms %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                       {% if platform == 'amazon_jp' %}bg-orange-100 text-orange-800{% endif %}
+                                       {% if platform == 'rakuten' %}bg-red-100 text-red-800{% endif %}
+                                       {% if platform == 'mercari' %}bg-pink-100 text-pink-800{% endif %}
+                                       {% if platform == 'yahoo_shopping' %}bg-purple-100 text-purple-800{% endif %}">
+                                {{ platform.replace('_', ' ').title() }}
+                                {% if result.platform_counts.get(platform) %}
+                                ({{ result.platform_counts[platform] }})
+                                {% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button 
+                            class="text-blue-600 hover:text-blue-900 mr-3"
+                            hx-get="/api/products/{{ result.filename }}"
+                            hx-target="#modal-content"
+                            onclick="openModal()"
+                        >
+                            <i class="fas fa-eye mr-1"></i>
+                            View Products
+                        </button>
+                        <button 
+                            class="text-green-600 hover:text-green-900"
+                            hx-get="/api/keyword/{{ result.keyword }}"
+                            hx-target="#keyword-detail"
+                            onclick="showTab('keyword-detail')"
+                        >
+                            <i class="fas fa-chart-line mr-1"></i>
+                            History
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal for Product Details -->
+<div id="modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-96 overflow-hidden">
+            <div class="flex justify-between items-center px-6 py-4 border-b">
+                <h3 class="text-lg font-semibold text-gray-900">Product Details</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="modal-content" class="overflow-y-auto max-h-80">
+                <!-- Product details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openModal() {
+        document.getElementById('modal').classList.remove('hidden');
+    }
+    
+    function closeModal() {
+        document.getElementById('modal').classList.add('hidden');
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+</script>

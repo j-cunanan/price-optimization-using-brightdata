@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price C            <!-- Price Changes Tab -->
+            <div id="changes-content" class="tab-content hidden">
+                <div id="changes-container" 
+                     hx-get="/api/changes" 
+                     hx-trigger="load"
+                     hx-target="this">
+                    <div class="flex items-center justify-center py-12">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span class="ml-3 text-gray-600">Loading price changes...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insights Tab -->
+            <div id="ai-insights-content" class="tab-content">
+                <div class="p-6">
+                    <!-- AI Question Input -->
+                    <div class="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
+                        <div class="flex items-center mb-4">
+                            <i class="fas fa-brain text-blue-600 text-xl mr-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-900">Ask AI about your price data</h3>
+                        </div>
+                        
+                        <form hx-get="/api/ai-insights" hx-target="#ai-insights-container" class="flex gap-3">
+                            <input 
+                                type="text" 
+                                name="question"
+                                placeholder="e.g., 'Which are the biggest movers?', 'Show me price increases', 'What categories are trending?'"
+                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                value="What are the biggest movers?"
+                            >
+                            <button 
+                                type="submit"
+                                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                            >
+                                <i class="fas fa-search mr-2"></i>
+                                Ask AI
+                            </button>
+                        </form>
+                        
+                        <!-- Quick Questions -->
+                        <div class="mt-4">
+                            <p class="text-sm text-gray-600 mb-2">Quick questions:</p>
+                            <div class="flex flex-wrap gap-2">
+                                <button 
+                                    class="px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50 transition-colors quick-question"
+                                    hx-get="/api/ai-insights?question=Which are the biggest movers?"
+                                    hx-target="#ai-insights-container"
+                                >
+                                    Biggest Movers
+                                </button>
+                                <button 
+                                    class="px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50 transition-colors quick-question"
+                                    hx-get="/api/ai-insights?question=Show me price increases"
+                                    hx-target="#ai-insights-container"
+                                >
+                                    Price Increases
+                                </button>
+                                <button 
+                                    class="px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50 transition-colors quick-question"
+                                    hx-get="/api/ai-insights?question=Show me price decreases"
+                                    hx-target="#ai-insights-container"
+                                >
+                                    Price Decreases
+                                </button>
+                                <button 
+                                    class="px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50 transition-colors quick-question"
+                                    hx-get="/api/ai-insights?question=Platform performance analysis"
+                                    hx-target="#ai-insights-container"
+                                >
+                                    Platform Analysis
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Insights Results -->
+                    <div id="ai-insights-container" 
+                         hx-get="/api/ai-insights?question=What are the biggest movers?" 
+                         hx-trigger="load"
+                         hx-target="this">
+                        <div class="flex items-center justify-center py-12">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            <span class="ml-3 text-gray-600">Analyzing price data...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keywords Tab -->d</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <i class="fas fa-chart-line text-blue-600 text-2xl mr-3"></i>
+                    <h1 class="text-3xl font-bold text-gray-900">Price Change Dashboard</h1>
+                </div>
+                <div class="text-sm text-gray-500">
+                    <i class="fas fa-database mr-1"></i>
+                    Japanese Marketplace Scraper
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats Cards -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-box text-blue-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Total Products</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ "{:,}".format(stats.total_products) }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-layer-group text-green-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Total Batches</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ stats.total_batches }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-search text-purple-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Keywords Tracked</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ stats.total_keywords }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-orange-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Recent Changes</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ stats.recent_changes }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Search & Filter</h2>
+            </div>
+            <div class="p-6">
+                <div class="flex flex-wrap gap-4">
+                    <div class="flex-1 min-w-64">
+                        <input 
+                            type="text" 
+                            id="keyword-search"
+                            name="keyword"
+                            placeholder="Search keywords..."
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                    </div>
+                    <button 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        hx-get="/api/results"
+                        hx-target="#results-container"
+                    >
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Tabs -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex">
+                    <button 
+                        class="py-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm tab-button"
+                        onclick="showTab('results')"
+                        id="results-tab"
+                    >
+                        <i class="fas fa-table mr-2"></i>
+                        Recent Results
+                    </button>
+                    <button 
+                        class="py-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm tab-button"
+                        onclick="showTab('changes')"
+                        id="changes-tab"
+                    >
+                        <i class="fas fa-exchange-alt mr-2"></i>
+                        Price Changes
+                    </button>
+                    <button 
+                        class="py-2 px-4 border-b-2 border-blue-500 text-blue-600 font-medium text-sm tab-button active"
+                        onclick="showTab('ai-insights')"
+                        id="ai-insights-tab"
+                    >
+                        <i class="fas fa-brain mr-2"></i>
+                        AI Insights
+                    </button>
+                    <button 
+                        class="py-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm tab-button"
+                        onclick="showTab('keywords')"
+                        id="keywords-tab"
+                    >
+                        <i class="fas fa-tags mr-2"></i>
+                        Keywords
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Results Tab -->
+            <div id="results-content" class="tab-content hidden">
+                <div id="results-container" 
+                     hx-get="/api/results" 
+                     hx-trigger="load"
+                     hx-target="this">
+                    <div class="flex items-center justify-center py-12">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span class="ml-3 text-gray-600">Loading results...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Changes Tab -->
+            <div id="changes-content" class="tab-content hidden">
+                <div id="changes-container"
+                     hx-get="/api/changes" 
+                     hx-trigger="intersect once"
+                     hx-target="this">
+                    <div class="flex items-center justify-center py-12">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span class="ml-3 text-gray-600">Loading changes...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keywords Tab -->
+            <div id="keywords-content" class="tab-content hidden">
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {% for keyword in keywords %}
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                             hx-get="/api/keyword/{{ keyword }}"
+                             hx-target="#keyword-detail"
+                             onclick="showTab('keyword-detail')">>>
+                            <h3 class="font-medium text-gray-900 mb-2">{{ keyword.replace('_', ' ').title() }}</h3>
+                            <div class="text-sm text-gray-500">
+                                <i class="fas fa-clock mr-1"></i>
+                                Click to view history
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keyword Detail Tab (Hidden by default) -->
+            <div id="keyword-detail-content" class="tab-content hidden">
+                <div id="keyword-detail">
+                    <!-- Keyword detail will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                button.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show selected tab content
+            const contentEl = document.getElementById(tabName + '-content');
+            if (contentEl) {
+                contentEl.classList.remove('hidden');
+            }
+            
+            // Activate selected tab button
+            const tabEl = document.getElementById(tabName + '-tab');
+            if (tabEl) {
+                tabEl.classList.add('active', 'border-blue-500', 'text-blue-600');
+                tabEl.classList.remove('border-transparent', 'text-gray-500');
+            }
+            
+            // Clear and reset search input when switching tabs
+            const searchInput = document.getElementById('keyword-search');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            if (!amount) return 'N/A';
+            return '¥' + new Intl.NumberFormat('ja-JP').format(amount);
+        }
+        
+        // Handle search input for different contexts
+        function handleSearch() {
+            const searchInput = document.getElementById('keyword-search');
+            const activeTab = document.querySelector('.tab-button.active');
+            
+            if (!searchInput || !activeTab) return;
+            
+            const tabName = activeTab.id.replace('-tab', '');
+            const searchValue = searchInput.value;
+            
+            // Update the appropriate container based on active tab
+            if (tabName === 'results') {
+                htmx.ajax('GET', `/api/results?keyword=${encodeURIComponent(searchValue)}`, {
+                    target: '#results-container'
+                });
+            } else if (tabName === 'changes') {
+                htmx.ajax('GET', `/api/changes?keyword=${encodeURIComponent(searchValue)}`, {
+                    target: '#changes-container'
+                });
+            }
+        }
+        
+        // Add event listener for search input
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('keyword-search');
+            if (searchInput) {
+                let searchTimeout;
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(handleSearch, 500);
+                });
+            }
+        });
+
+        // Auto-refresh every 5 minutes
+        setInterval(() => {
+            const activeTab = document.querySelector('.tab-button.active');
+            if (activeTab) {
+                const tabName = activeTab.id.replace('-tab', '');
+                if (tabName === 'results') {
+                    htmx.trigger('#results-container', 'refresh');
+                } else if (tabName === 'changes') {
+                    htmx.trigger('#changes-container', 'refresh');
+                }
+            }
+        }, 300000);
+    </script>
+</body>
+</html>

@@ -31,7 +31,7 @@ A comprehensive price monitoring system for Japanese e-commerce platforms (Amazo
 
 ```bash
 git clone <your-repo-url>
-cd scrape_everything
+cd price-optimization-using-brightdata
 uv sync
 cp .env.example .env  # Add your Bright Data credentials
 ```
@@ -100,6 +100,18 @@ price-optimization-using-brightdata/
 ## 📞 Support
 
 For questions about Bright Data integration or advanced features, check the inline documentation or logs at `data/monitor.log`.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## ⚖️ Legal Notice
+
+This software is for educational and research purposes. Please:
+- Respect robots.txt and terms of service
+- Use reasonable request rates
+- Review Bright Data's terms for commercial usage
+- Comply with applicable laws and regulations
 
 ---
 

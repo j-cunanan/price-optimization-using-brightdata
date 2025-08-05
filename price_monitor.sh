@@ -82,11 +82,13 @@ ${YELLOW}OPTIONS:${NC}
     --scrape-only          Only run scraping (skip import and monitor)
     --import-only          Only run import (skip scraping and monitor)
     --monitor-only         Only run monitoring (skip scraping and import)
+    --dashboard-only       Only start dashboard (skip all other phases)
 
 ${YELLOW}EXAMPLES:${NC}
     ./price_monitor.sh                          # Full workflow with defaults
     ./price_monitor.sh -l 50 -d                # Scrape 50 per keyword, start dashboard
-    ./price_monitor.sh --monitor-only           # Just check current status
+    ./price_monitor.sh --monitor-only -d       # Check status and start dashboard  
+    ./price_monitor.sh --dashboard-only        # Just start dashboard
     ./price_monitor.sh --scrape-only -l 20     # Just scrape with limit 20
     ./price_monitor.sh -p "amazon_jp rakuten"     # Only scrape Amazon and Rakuten
     ./price_monitor.sh -q                      # Run quietly (log to file only)
@@ -235,23 +237,45 @@ run_dashboard() {
     if lsof -ti:$DASHBOARD_PORT &> /dev/null; then
         log "INFO" "Dashboard already running on port $DASHBOARD_PORT"
         log "INFO" "Access it at: http://localhost:$DASHBOARD_PORT"
+        
+        # If this is dashboard-only mode, wait for user to stop it
+        if [[ $SKIP_SCRAPE == true && $SKIP_IMPORT == true && $SKIP_MONITOR == true ]]; then
+            log "INFO" "Dashboard is running. Press Ctrl+C to stop."
+            wait
+        fi
         return 0
     fi
     
-    # Start dashboard in background
+    # Start dashboard
     log "INFO" "Starting dashboard on port $DASHBOARD_PORT..."
-    nohup uv run python dashboard/app.py > "$DATA_DIR/dashboard.log" 2>&1 &
-    local dashboard_pid=$!
     
-    # Wait a moment and check if it started successfully
-    sleep 3
-    if kill -0 $dashboard_pid 2>/dev/null; then
-        log "SUCCESS" "Dashboard started successfully (PID: $dashboard_pid)"
+    # If this is the only thing we're doing, run in foreground
+    if [[ $SKIP_SCRAPE == true && $SKIP_IMPORT == true && $SKIP_MONITOR == true ]]; then
+        log "SUCCESS" "Dashboard starting in foreground mode"
         log "INFO" "Access dashboard at: http://localhost:$DASHBOARD_PORT"
-        echo $dashboard_pid > "$DATA_DIR/dashboard.pid"
+        log "INFO" "Press Ctrl+C to stop the dashboard"
+        
+        # Run in foreground - will be killed when user presses Ctrl+C
+        uv run python dashboard/app.py
     else
-        log "ERROR" "Dashboard failed to start"
-        return 1
+        # Run in background and continue with other tasks
+        nohup uv run python dashboard/app.py > "$DATA_DIR/dashboard.log" 2>&1 &
+        local dashboard_pid=$!
+        
+        # Wait a moment and check if it started successfully
+        sleep 3
+        if kill -0 $dashboard_pid 2>/dev/null; then
+            log "SUCCESS" "Dashboard started successfully (PID: $dashboard_pid)"
+            log "INFO" "Access dashboard at: http://localhost:$DASHBOARD_PORT"
+            echo $dashboard_pid > "$DATA_DIR/dashboard.pid"
+            
+            log "INFO" "Dashboard will continue running in background"
+            log "INFO" "To stop it later, run: kill $dashboard_pid"
+            log "INFO" "Or use: pkill -f 'dashboard/app.py'"
+        else
+            log "ERROR" "Dashboard failed to start"
+            return 1
+        fi
     fi
 }
 
@@ -259,15 +283,18 @@ run_dashboard() {
 cleanup() {
     log "INFO" "Cleaning up..."
     
-    # Stop dashboard if we started it
+    # Always stop dashboard when script exits (Ctrl+C or completion)
     if [[ -f "$DATA_DIR/dashboard.pid" ]]; then
         local pid=$(cat "$DATA_DIR/dashboard.pid")
         if kill -0 $pid 2>/dev/null; then
             log "INFO" "Stopping dashboard (PID: $pid)"
-            kill $pid
-            rm -f "$DATA_DIR/dashboard.pid"
+            kill $pid 2>/dev/null || true
         fi
+        rm -f "$DATA_DIR/dashboard.pid"
     fi
+    
+    # Also kill any dashboard processes that might be running
+    pkill -f 'dashboard/app.py' 2>/dev/null || true
 }
 
 # Main execution function
@@ -281,8 +308,10 @@ main() {
     # Setup cleanup trap
     trap cleanup EXIT
     
-    # Check dependencies
-    check_dependencies
+    # Check dependencies (skip for dashboard-only mode)
+    if [[ ! ($SKIP_SCRAPE == true && $SKIP_IMPORT == true && $SKIP_MONITOR == true && $START_DASHBOARD == true) ]]; then
+        check_dependencies
+    fi
     
     # Run phases
     run_scraping
@@ -290,6 +319,7 @@ main() {
     run_monitoring
     run_dashboard
     
+    # If dashboard is running in foreground, we don't reach here
     local end_time=$(date +%s)
     local total_duration=$((end_time - start_time))
     
@@ -298,6 +328,23 @@ main() {
     
     if [[ $START_DASHBOARD == true ]]; then
         log "INFO" "Dashboard: http://localhost:$DASHBOARD_PORT"
+        
+        # If dashboard was started in background, keep script alive until user stops it
+        if [[ -f "$DATA_DIR/dashboard.pid" ]]; then
+            log "INFO" "Keeping script alive while dashboard runs..."
+            log "INFO" "Press Ctrl+C to stop everything"
+            
+            # Wait for user interrupt
+            while true; do
+                sleep 1
+                # Check if dashboard is still running
+                local pid=$(cat "$DATA_DIR/dashboard.pid" 2>/dev/null)
+                if [[ -n "$pid" ]] && ! kill -0 $pid 2>/dev/null; then
+                    log "INFO" "Dashboard stopped externally"
+                    break
+                fi
+            done
+        fi
     fi
 }
 
@@ -353,6 +400,13 @@ while [[ $# -gt 0 ]]; do
         --monitor-only)
             SKIP_SCRAPE=true
             SKIP_IMPORT=true
+            shift
+            ;;
+        --dashboard-only)
+            SKIP_SCRAPE=true
+            SKIP_IMPORT=true
+            SKIP_MONITOR=true
+            START_DASHBOARD=true
             shift
             ;;
         *)

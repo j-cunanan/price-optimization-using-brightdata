@@ -39,15 +39,18 @@ cp .env.example .env  # Add your Bright Data credentials
 **Most Common Use Cases:**
 
 ```bash
-# Daily status check (30 seconds)
-./price_monitor.sh --monitor-only
+# Daily status check and view results (30 seconds + dashboard stays open)
+./price_monitor.sh --monitor-only -d
 
-# Weekly full update (5-10 minutes)  
+# Weekly full update with dashboard (5-10 minutes + dashboard stays open)  
 ./price_monitor.sh -d
 
-# Check specific products
+# Just start the dashboard (stays open until Ctrl+C)
+./price_monitor.sh --dashboard-only
+
+# Check specific products with dashboard
 echo "iPhone 15 Pro" > temp_keywords.txt
-./price_monitor.sh -k temp_keywords.txt -l 20
+./price_monitor.sh -k temp_keywords.txt -l 20 -d
 ```
 
 **See [QUICK_START.md](QUICK_START.md) for all commands and options!**
